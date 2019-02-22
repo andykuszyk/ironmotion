@@ -1,0 +1,6 @@
+env/
+*.gest
+.ipynb_checkpoints/
+.vscode/
+*.pyc
+*.ipynb

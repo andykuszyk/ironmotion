@@ -1,0 +1,73 @@
+#!/usr/bin/python
+import argparse
+from ironmotion.listeners import RecordListener
+from ironmotion.sdk import Leap
+import time
+import pickle
+from scipy.spatial.distance import euclidean
+from scipy.integrate import trapz
+from math import sqrt
+
+
+def record(args):
+    listener = RecordListener()
+    controller = Leap.Controller(listener)
+    print 'Recording, perform a gesture aboove your Leap device...'
+    while listener.is_recording != False:
+        pass
+    print 'Recording complete, captured {} frames of motion...'.format(len(listener.translations))
+    controller.remove_listener(listener)
+    with open(args.gesture_file, 'wb') as file:
+        pickle.dump([(t.x, t.y, t.z) for t in listener.translations], file)
+    print '...frames saved to {}'.format(args.gesture_file)
+
+
+def calculate_auc_delta(index_one, index_two, recorded, listened):
+    return (
+        trapz([t[index_one] for t in recorded], [t[index_two] for t in recorded]) -
+        trapz([t[index_one] for t in listened], [t[index_two] for t in listened])
+    )
+
+
+def distance(args):
+    print 'Please wait, loading gesture file...'
+    with open(args.gesture_file, 'rb') as file:
+        recorded_translations = pickle.load(file)
+    listener = RecordListener()
+    controller = Leap.Controller(listener)
+    print '...file loaded. Perform a gesture above your Leap device to distance the recording...'
+    while listener.is_recording != False:
+        pass
+    listened_translations = [(t.x, t.y, t.z) for t in listener.translations]
+
+    recorded_translations_length = len([t[0] for t in recorded_translations])
+    listened_translations_length = len([t[0] for t in listened_translations])
+    
+    if recorded_translations_length < listened_translations_length:
+        for i in range(0, listened_translations_length - recorded_translations_length):
+            recorded_translations.append((0, 0, 0))
+    elif listened_translations_length < recorded_translations_length:
+        for i in range(0, recorded_translations_length - listened_translations_length):
+            listened_translations.append((0, 0, 0))
+
+    xy_auc_delta = calculate_auc_delta(0, 1, recorded_translations, listened_translations)
+    yz_auc_delta = calculate_auc_delta(1, 2, recorded_translations, listened_translations)
+    xz_auc_delta = calculate_auc_delta(0, 2, recorded_translations, listened_translations)
+    print 'The AUC deltas between the two gestures are (XY, YZ, XZ): {}, {}, {}'.format(xy_auc_delta, yz_auc_delta, xz_auc_delta)
+    print 'The normalised difference is: {}'.format(sqrt(xy_auc_delta**2 + yz_auc_delta**2 + xz_auc_delta**2))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+    
+    record_parser = subparsers.add_parser('record', help='Used to record a gesture to a file.')
+    record_parser.add_argument('gesture_file', help='The path of the file to save the recorded gesture to.')
+    record_parser.set_defaults(func=record)
+
+    distance_parser = subparsers.add_parser('distance', help='Used to evaluate the euclidean distance between an existing recording with a new gesture.')
+    distance_parser.add_argument('gesture_file', help='The path to a pre-recorded gesture file.')
+    distance_parser.set_defaults(func=distance)
+
+    args = parser.parse_args()
+    args.func(args)
