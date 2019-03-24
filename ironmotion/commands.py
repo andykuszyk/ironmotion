@@ -1,8 +1,6 @@
 from ironmotion.listeners import RecordListener
 from ironmotion.sdk import Leap
 import pickle
-from math import sqrt
-import numpy as np
 import subprocess
 from pynput.keyboard import Key, Controller
 
@@ -31,13 +29,7 @@ def distance(args):
         pass
     listened_translations = [(t.x, t.y, t.z) for t in listener.translations]
 
-    recorded_translations = [np.array(t) for t in recorded_translations]
-    listened_translations = [np.array(t) for t in listened_translations]
-    
-    recorded_displacement = recorded_translations[-1] - recorded_translations[0]
-    listened_displacement = listened_translations[-1] - listened_translations[0]
-    displacement_delta = recorded_displacement - listened_displacement
-    mse = sqrt(displacement_delta[0] ** 2 + displacement_delta[1] ** 2 + displacement_delta[2] ** 2)
+    mse = distance.simple(recorded_translations, listened_translations)
 
     print 'The displacement delta is: {}'.format(displacement_delta)
     print 'The MSE is: {}'.format(mse)
@@ -67,6 +59,7 @@ def listen(args):
             raise Exception('Error loading gesture file ({}): {}'.format(config['file'], e))
 
         gesture['name'] = config['name']
+        gesture['threshold'] = config['threshold']
 
         if action['type'] == 'cmd':
             gesture['action'] = lambda: subprocess.call(action['value'].split(' ')
