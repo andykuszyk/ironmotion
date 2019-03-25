@@ -8,6 +8,9 @@ import distance as dist
 
 
 def record(args):
+    """
+    Records a gesture and saves it to file.
+    """
     listener = RecordListener()
     controller = Leap.Controller(listener)
     print 'Recording, perform a gesture aboove your Leap device...'
@@ -21,6 +24,9 @@ def record(args):
 
 
 def distance(args):
+    """
+    Listens for a gesture and compares it to the gesture file provided.
+    """
     print 'Please wait, loading gesture file...'
     with open(args.gesture_file, 'rb') as file:
         recorded_translations = pickle.load(file)
@@ -37,11 +43,19 @@ def distance(args):
 
 
 class Action:
+    """
+    Represents an action to take when a gesture is recognised.
+    """
+
     def __init__(self, action_value, action_type):
         self._value = action_value
         self._type = action_type
 
     def invoke(self):
+        """
+        Executes the action be either pressing the key(s) specified or executing
+        the shell command provided.
+        """
         keyboard = Controller()
         if self._type == 'cmd':
             subprocess.call(self._value.split(' '))
@@ -60,6 +74,10 @@ class Action:
 
 
 def listen(args):
+    """
+    Listens for new gestures and tries to match them to those provided in the
+    config file.
+    """
     try:
         with open(args.config_file, 'r') as config_file:
             config = json.loads(config_file.read())
@@ -91,7 +109,8 @@ def listen(args):
     listener = ListenListener()
     listener.set_gestures(gestures)
     controller = Leap.Controller(listener)
-    input('')
+    input('') # Break on key press
+    controller.remove_listener(listener)
 
 
 def get_key(key):

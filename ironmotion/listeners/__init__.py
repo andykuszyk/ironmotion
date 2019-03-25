@@ -3,6 +3,9 @@ from ironmotion import distance
 
 
 class RecordListener(Leap.Listener):
+    """
+    Waits for a gesture to start and then records its frames.
+    """
     def on_init(self, controller):
         self.is_recording = None
         self._last_frame = None
@@ -28,6 +31,11 @@ class RecordListener(Leap.Listener):
 
 
 class ListenListener(Leap.Listener):
+    """
+    Waits for a gesture to start and then, upon it finishing, compares
+    it to the list of gestures provided by `set_gestures()` and invokes the
+    action of any that match.
+    """
     def set_gestures(self, gestures):
         self.gestures = gestures
 
