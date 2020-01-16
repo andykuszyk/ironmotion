@@ -1,0 +1,11 @@
+[
+    {
+        "file": "sample/wave.gest",
+        "name": "wave",
+        "threshold": "50",
+        "action": {
+            "type": "key",
+            "value": "cmd"
+        }
+    }
+]
